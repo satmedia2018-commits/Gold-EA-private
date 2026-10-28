@@ -115,7 +115,7 @@ input double InpA_BufferATR     = 0.10;
 input double InpA_MaxChaseATR   = 1.0;
 
 input group "=== Module B : Pullback ==="
-input bool   InpEnableB         = true;
+input bool   InpEnableB         = false;
 input double InpB_RiskMult      = 1.0;
 input int    InpB_Lookback      = 5;
 input double InpB_RR            = 1.8;
@@ -124,7 +124,7 @@ input double InpB_SLMaxATR      = 2.0;
 input double InpB_TouchATR      = 0.25;
 
 input group "=== Module C : Retour à la moyenne ==="
-input bool   InpEnableC         = true;
+input bool   InpEnableC         = false;
 input double InpC_RiskMult      = 0.5;
 input double InpC_DevATR        = 1.6;
 input double InpC_SL_ATR        = 1.2;
