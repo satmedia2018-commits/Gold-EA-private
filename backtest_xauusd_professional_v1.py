@@ -263,8 +263,12 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
                                      (direction == -1 and o <= sig.tp2)) else sig.tp2
                     fill = raw_fill - direction * adverse_exit
                     if stage == 0:
-                        realized_usd += tp1_real * direction * (fill - entry) * bot.LOT * bot.CONTRACT_SIZE
-                        gross_usd += tp1_real * direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
+                        # TP1 et TP2 touchés dans la même bougie : le premier lot part à TP1,
+                        # avec amélioration éventuelle si l'ouverture a déjà dépassé TP1.
+                        raw_tp1_fill = max(sig.tp1, o) if direction == 1 else min(sig.tp1, o)
+                        fill_tp1 = raw_tp1_fill - direction * adverse_exit
+                        realized_usd += tp1_real * direction * (fill_tp1 - entry) * bot.LOT * bot.CONTRACT_SIZE
+                        gross_usd += tp1_real * direction * (raw_tp1_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                         remaining = 1.0 - tp1_real
                     else:
                         remaining = 1.0 - tp1_real
