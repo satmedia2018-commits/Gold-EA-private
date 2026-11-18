@@ -438,7 +438,7 @@ def fixed_lot():
     units = math.floor(LOT / step + 0.5)
     decimals = max(0, len(f"{step:.8f}".rstrip("0").split(".")[-1]))
     lot = round(units * step, decimals)
-    if lot < minimum - 1e-9 or lot > maximum + 1e-9 or abs(lot - LOT) > step * 0.500001:
+    if lot < minimum - 1e-9 or lot > maximum + 1e-9 or abs(lot - LOT) > 1e-9:
         mt5_log("LOT non représentable avec le pas du broker : aucun ordre.")
         return None
     return lot
