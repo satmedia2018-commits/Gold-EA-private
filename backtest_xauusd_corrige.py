@@ -284,6 +284,9 @@ def report(tr, blocked, tr_nofilter, df, bot, spread, slippage):
     print(f"Lot {bot.LOT} | SL {bot.SL_USD:g} $ ({bot.usd_to_points(bot.SL_USD):.1f} distance prix) | "
           f"TP1 {bot.TP1_USD:g} $ | TP2 {bot.TP2_USD:g} $ | fraction TP1 réellement simulée : {bot.tp1_fraction():.1%} | "
           f"coûts simplifiés : spread {spread:.2f} + glissement {slippage:.2f}")
+    print(f"Filtres stratégie : New York {'ACTIVÉE' if bot.ENABLE_NEW_YORK_SESSION else 'DÉSACTIVÉE'} "
+          f"({bot.NEW_YORK_START_UTC:02d}:00-{bot.NEW_YORK_END_UTC:02d}:00 UTC) | "
+          f"Rebond EMA20 ACHAT {'ACTIVÉ' if bot.ENABLE_BUY_EMA20_PULLBACK else 'DÉSACTIVÉ'}")
     print("Hypothèses : entrée à l’open de la bougie suivante ; stop prioritaire si stop/cible dans la même bougie ; "
           "pas de ticks, pas de spread variable, pas de commissions MT5 ni de slippage historique.")
     print("=" * 86)
