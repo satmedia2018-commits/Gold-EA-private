@@ -46,7 +46,7 @@ TD_API_URL = "https://api.twelvedata.com/time_series"
 # ------------------------- CHARGEMENT DE LA STRATÉGIE ------------------------
 def load_bot(path=None):
     here = Path(__file__).resolve().parent
-    candidates = [Path(path)] if path else [here / "xauusd_bot.py", here / "XAUUSD BOT.py", here / "XauUSD bot.py"]
+    candidates = [Path(path)] if path else [here / "xauusd_bot_professional_v1.py", here / "xauusd_bot.py", here / "XAUUSD BOT.py", here / "XauUSD bot.py"]
     for p in candidates:
         if p.exists():
             spec = importlib.util.spec_from_file_location("bot", p)
@@ -55,7 +55,7 @@ def load_bot(path=None):
             spec.loader.exec_module(mod)
             print(f"Stratégie chargée depuis : {p.name}")
             return mod
-    sys.exit("Fichier du bot introuvable : placez ce script dans le même dossier que 'xauusd_bot.py' "
+    sys.exit("Fichier du bot introuvable : placez ce script dans le même dossier que 'xauusd_bot_professional_v1.py' ou 'xauusd_bot.py' "
              "ou utilisez --bot.")
 
 
