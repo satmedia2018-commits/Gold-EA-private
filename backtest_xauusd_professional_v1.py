@@ -5,7 +5,7 @@ Backtest du bot XAUUSD M5  (à placer dans le MÊME dossier que xauusd_bot.py)
 Le script charge xauusd_bot.py et rejoue EXACTEMENT ses règles sur l'historique :
   - indicateurs, signaux, filtres de bougies (doji, hammer, shooting star, couleur du signal) ;
   - LOT, SL, TP1 et TP2 fixes en dollars, tels que réglés dans xauusd_bot.py ;
-  - entrée à la clôture de la bougie du signal, un seul trade à la fois ;
+  - entrée à l'open de la bougie M5 suivante, un seul trade à la fois ;
   - TP1 partiel puis stop au point d'entrée, TP2, stop, expiration (36 bougies) ;
   - si stop et objectif sont touchés dans la même bougie, le stop passe en premier (prudent) ;
   - coûts : spread + glissement déduits de chaque trade.
@@ -222,6 +222,7 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
             stage = 0
             bars = 0
             realized_usd = 0.0
+            gross_usd = 0.0
             final_kind = None
             exit_time = None
             exit_price = None
@@ -248,9 +249,11 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
                     fill = raw_fill - direction * adverse_exit
                     if stage == 0:
                         realized_usd = direction * (fill - entry) * bot.LOT * bot.CONTRACT_SIZE
+                        gross_usd = direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                         final_kind = "STOP"
                     else:
                         realized_usd += (1.0 - tp1_real) * direction * (fill - entry) * bot.LOT * bot.CONTRACT_SIZE
+                        gross_usd += (1.0 - tp1_real) * direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                         final_kind = "BREAKEVEN" if abs(fill-entry) < sig.risk*0.05 else "STOP_AFTER_TP1"
                     exit_price, exit_time = fill, bar["datetime"]
                     break
@@ -260,11 +263,13 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
                                      (direction == -1 and o <= sig.tp2)) else sig.tp2
                     fill = raw_fill - direction * adverse_exit
                     if stage == 0:
-                        realized_usd += tp1_real * direction * (sig.tp1 - entry) * bot.LOT * bot.CONTRACT_SIZE
+                        realized_usd += tp1_real * direction * (fill - entry) * bot.LOT * bot.CONTRACT_SIZE
+                        gross_usd += tp1_real * direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                         remaining = 1.0 - tp1_real
                     else:
                         remaining = 1.0 - tp1_real
                     realized_usd += remaining * direction * (fill - entry) * bot.LOT * bot.CONTRACT_SIZE
+                    gross_usd += remaining * direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                     final_kind, exit_price, exit_time = "TP2", fill, bar["datetime"]
                     break
 
@@ -273,6 +278,7 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
                                      (direction == -1 and o <= sig.tp1)) else sig.tp1
                     fill1 = raw_fill - direction * adverse_exit
                     realized_usd += tp1_real * direction * (fill1 - entry) * bot.LOT * bot.CONTRACT_SIZE
+                    gross_usd += tp1_real * direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                     stage = 1
                     # Si le BE est aussi touché dans cette bougie, on suppose TP1 puis BE
                     # (plus conservateur qu'attribuer TP2, mais sans inventer l'ordre tick).
@@ -282,6 +288,7 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
                                        (direction == -1 and o >= entry)) else entry
                         fill_be = raw_be - direction * adverse_exit
                         realized_usd += (1.0 - tp1_real) * direction * (fill_be - entry) * bot.LOT * bot.CONTRACT_SIZE
+                        gross_usd += (1.0 - tp1_real) * direction * (raw_be - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                         final_kind, exit_price, exit_time = "BREAKEVEN", fill_be, bar["datetime"]
                         break
 
@@ -289,6 +296,7 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
                     raw_fill = c
                     fill = raw_fill - direction * adverse_exit
                     realized_usd += (1.0 - tp1_real) * direction * (fill - entry) * bot.LOT * bot.CONTRACT_SIZE
+                    gross_usd += (1.0 - tp1_real) * direction * (raw_fill - raw_entry) * bot.LOT * bot.CONTRACT_SIZE
                     final_kind, exit_price, exit_time = "EXPIRE", fill, bar["datetime"]
                     break
 
@@ -312,7 +320,7 @@ def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True,
             commission_usd = float(commission_per_lot) * bot.LOT
             net_usd = realized_usd - commission_usd
             r_net = net_usd / float(bot.SL_USD)
-            r_gross = realized_usd / float(bot.SL_USD)
+            r_gross = gross_usd / float(bot.SL_USD)
             exit_idx = int(df.index[df["datetime"] == exit_time][-1])
             trades.append({
                 "signal_time": df.iloc[i]["datetime"],
@@ -385,8 +393,15 @@ def report(tr, blocked, tr_nofilter, df, bot, spread, slippage):
     print("Hypothèses : entrée à l’open de la bougie suivante ; stop prioritaire si stop/cible dans la même bougie ; "
           "pas de ticks ni de spread variable ; commission paramétrable mais à renseigner selon le compte ; slippage supposé constant.")
     print("=" * 86)
+    open_pos = getattr(tr, "attrs", {}).get("open_trade")
+    if open_pos:
+        print("\nPOSITION ENCORE OUVERTE (hors statistiques des trades clôturés)")
+        print(f"  Entrée réelle simulée : {open_pos['entry_time']} | {open_pos['side']} | "
+              f"TP1 atteint : {open_pos['tp1_reached']} | PnL latent net estimé : {open_pos['net_mtm_usd']:+.2f} $")
+        print(f"  MAE estimée : {open_pos['mae_R']:.3f}R (approximation OHLC, pas un drawdown tick).")
+    print("  DD ci-dessous = drawdown des trades clôturés ; le drawdown intratrade réel exige des ticks.")
     if tr.empty:
-        print("Aucun trade généré sur cette période.")
+        print("Aucun trade clôturé généré sur cette période.")
         return
 
     print("\nRésultat global (avec les filtres du bot)")
@@ -409,7 +424,7 @@ def report(tr, blocked, tr_nofilter, df, bot, spread, slippage):
     print("\nPar type de signal")
     for setup, g in tr.groupby("setup"):
         print(line(setup[:34], g["r_net"], usd))
-    print("\nPar session (heure UTC des données)")
+    print("\nPar session (heure UTC réelle d’entrée, open de la bougie suivante)")
     tr = tr.assign(session=tr["entree"].dt.hour.map(session_of))
     for sess, g in tr.groupby("session"):
         print(line(sess, g["r_net"], usd))
