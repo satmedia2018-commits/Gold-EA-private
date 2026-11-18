@@ -105,6 +105,12 @@ MAX_BARS_ACTIVE = 36         # un signal expire après 36 bougies M5 (3 h)
 RSI_MIN_FOR_SHORT = 30
 RSI_MAX_FOR_LONG = 70
 
+# --- Interrupteurs de stratégie (True = activé, False = désactivé) ---
+ENABLE_NEW_YORK_SESSION = False       # Session UTC 13:00-21:00 ; True pour la réactiver
+NEW_YORK_START_UTC = 13
+NEW_YORK_END_UTC = 21
+ENABLE_BUY_EMA20_PULLBACK = False     # Rebond EMA20 en ACHAT ; True pour le réactiver
+
 # --- Journal CSV (uniquement les trades) ---
 LOG_DIR = Path(r"C:\Users\USERTEST\AppData\Roaming\MetaQuotes\Terminal\Common\Files")
 LOG_NAME = "signals_log.csv"
@@ -305,11 +311,20 @@ def detect_signal(df: pd.DataFrame):
             side, setup = "VENTE", f"Cassure du plus bas des {BREAKOUT_LOOKBACK} bougies"
     elif trend == "HAUSSIERE" and rsi < RSI_MAX_FOR_LONG:
         reclaimed = (prev3["close"] < prev3["ema_fast"]).any()
-        if reclaimed and close > last["ema_fast"] and close > open_:
+        if ENABLE_BUY_EMA20_PULLBACK and reclaimed and close > last["ema_fast"] and close > open_:
             side, setup = "ACHAT", "Rebond sur l'EMA20 (repli)"
         elif close > prior["high"].max():
             side, setup = "ACHAT", f"Cassure du plus haut des {BREAKOUT_LOOKBACK} bougies"
     if side is None:
+        return None, trend
+
+    # Blocage de la session New York selon l'heure UTC de la bougie du signal.
+    # Le même filtre est utilisé en direct et dans le backtest.
+    signal_hour_utc = int(last["datetime"].hour)
+    if (not ENABLE_NEW_YORK_SESSION
+            and NEW_YORK_START_UTC <= signal_hour_utc < NEW_YORK_END_UTC):
+        LAST_BLOCK = (f"{side} bloqué : session New York désactivée "
+                      f"({NEW_YORK_START_UTC:02d}:00-{NEW_YORK_END_UTC:02d}:00 UTC)")
         return None, trend
 
     reason = candle_filter_reason(df, side)
