@@ -2,10 +2,10 @@
 """
 Backtest XAUUSD M5 V5.0 (à placer avec xauusd_bot_ver_5_0.py)
 ============================================================================
-Le script charge xauusd_bot.py et rejoue EXACTEMENT ses règles sur l'historique :
+Le script charge xauusd_bot_ver_5_0.py et rejoue les règles du bot sur l'historique OHLC :
   - indicateurs, signaux, filtres de bougies (doji, hammer, shooting star, couleur du signal) ;
-  - LOT, SL, TP1 et TP2 fixes en dollars, tels que réglés dans xauusd_bot.py ;
-  - entrée à la clôture de la bougie du signal, un seul trade à la fois ;
+  - LOT, SL, TP1 et TP2 fixes en dollars, tels que réglés dans xauusd_bot_ver_5_0.py ;
+  - entrée à l'ouverture de la bougie M5 suivante, un seul trade à la fois ;
   - TP1 partiel puis stop au point d'entrée, TP2, stop, expiration (36 bougies) ;
   - si stop et objectif sont touchés dans la même bougie, le stop passe en premier (prudent) ;
   - coûts : spread + glissement déduits de chaque trade.
@@ -170,9 +170,9 @@ def get_data(bot, args):
 def run_backtest(bot, raw_df, spread, slippage, tp1_frac, use_filters=True):
     """Simulation séquentielle M5. Chaque bougie future n'est traitée qu'une fois par trade.
 
-    L'entrée est approximée par l'open de la bougie suivant le signal. Le contrôle CHECK_LIVE_CANDLE
-    est exclu faute de ticks. Hypothèse OHLC prudente : si le stop et une cible sont touchés dans la même bougie,
-    le stop est prioritaire. Les ticks, le spread variable, les gaps et l'exécution MT5
+    L'entrée est approximée par l'open de la bougie suivant le signal. CHECK_LIVE_CANDLE est exclu faute de ticks.
+    Hypothèse OHLC prudente : stop prioritaire si stop/cible sont touchés ensemble ; TP1 puis retour au BE
+    visibles dans une même bougie sont comptés comme BE. Les ticks, spread variable et gaps exacts
     ne sont pas reconstruits par ce moteur.
     """
     df = bot.add_indicators(raw_df.copy())
