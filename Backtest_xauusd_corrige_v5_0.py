@@ -301,8 +301,9 @@ def report(tr, blocked, tr_nofilter, df, bot, spread, slippage):
     print(f"Filtres stratégie : New York {'ACTIVÉE' if bot.ENABLE_NEW_YORK_SESSION else 'DÉSACTIVÉE'} "
           f"({bot.NEW_YORK_START_UTC:02d}:00-{bot.NEW_YORK_END_UTC:02d}:00 UTC) | "
           f"Rebond EMA20 ACHAT {'ACTIVÉ' if bot.ENABLE_BUY_EMA20_PULLBACK else 'DÉSACTIVÉ'}")
-    print("Hypothèses : entrée à l’open de la bougie suivante ; stop prioritaire si stop/cible dans la même bougie ; "
-          "pas de ticks, pas de spread variable, pas de commissions MT5 ni de slippage historique.")
+    print("Hypothèses : entrée à l’open suivante ; stop prioritaire si stop/cible dans la même bougie ; "
+          "TP1 puis retour BE dans une même bougie comptés prudemment comme BE ; "
+          "pas de ticks, spread variable, gaps exacts ni commissions historiques.")
     print("=" * 86)
     if tr.empty:
         print("Aucun trade généré sur cette période.")
