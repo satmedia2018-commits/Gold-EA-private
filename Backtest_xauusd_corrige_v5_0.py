@@ -19,7 +19,7 @@ CE QUE LE BACKTEST NE REPRODUIT PAS
 Un backtest ne prédit pas l'avenir : ne bricolez pas les paramètres jusqu'à ce que le passé "colle".
 
 UTILISATION (Thonny) : réglez les constantes ci-dessous, puis lancez le fichier (Run).
-En ligne de commande : python backtest_xauusd.py --bars 30000 --spread 0.30
+En ligne de commande : python Backtest_xauusd_corrige_v5_0.py --csv xauusd_m5_cache_MT5.csv --spread 0.30
 """
 
 import argparse
