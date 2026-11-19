@@ -27,8 +27,8 @@ SÉCURITÉS (à garder) :
 PRÉREQUIS : Windows, MetaTrader 5 d'Exness OUVERT et connecté, bouton "Algo Trading" vert.
     pip install MetaTrader5 pandas requests
 
-Lancement : python xauusd_bot.py            (boucle continue)
-            python xauusd_bot.py --once      (une seule analyse)
+Lancement : python xauusd_bot_ver_5_0.py            (boucle continue)
+            python xauusd_bot_ver_5_0.py --once      (une seule analyse)
 
 Aucun gain n'est garanti. Testez longtemps en démo. Ce n'est pas un conseil financier.
 """
